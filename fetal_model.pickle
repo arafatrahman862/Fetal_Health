@@ -1,0 +1,238 @@
+import streamlit as st
+import pickle
+import pandas as pd
+import matplotlib.pyplot as plt
+import random
+
+# Page config
+st.set_page_config(page_title="Fetal Health Classifier", layout="centered")
+
+# Load the model
+model_file = 'fetal_model.pickle'
+loaded_model = pickle.load(open(model_file, 'rb'))
+
+# Feature list based on the fetal_health.csv
+feature_info = {
+    'baseline value': 'Baseline Heart Rate',
+    'accelerations': 'Accelerations',
+    'fetal_movement': 'Fetal Movement',
+    'uterine_contractions': 'Uterine Contractions',
+    'light_decelerations': 'Light Decelerations',
+    'severe_decelerations': 'Severe Decelerations',
+    'prolongued_decelerations': 'Prolonged Decelerations',
+    'abnormal_short_term_variability': 'Abnormal STV',
+    'mean_value_of_short_term_variability': 'Mean STV',
+    'percentage_of_time_with_abnormal_long_term_variability': 'Abnormal LTV (%)',
+    'mean_value_of_long_term_variability': 'Mean LTV',
+    'histogram_width': 'Histogram Width',
+    'histogram_min': 'Histogram Min',
+    'histogram_max': 'Histogram Max',
+    'histogram_number_of_peaks': 'Histogram Peaks',
+    'histogram_number_of_zeroes': 'Histogram Zeroes',
+    'histogram_mode': 'Histogram Mode',
+    'histogram_mean': 'Histogram Mean',
+    'histogram_median': 'Histogram Median',
+    'histogram_variance': 'Histogram Variance',
+    'histogram_tendency': 'Histogram Tendency'
+}
+
+# Sidebar
+with st.sidebar:
+    st.markdown("## 🩺 About")
+    st.write("This app predicts **fetal health status** based on cardiotocography features using a pre-trained ML model.")
+    st.markdown("---")
+    st.markdown("👶 *Fetal Health Classifier*")
+    st.markdown("📁 Model: `fetal_model.pickle`")
+
+# Title
+st.markdown("<h1 style='text-align: center; color: #00BFFF;'>👶 Fetal Health Prediction</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: gray;'>Enter fetal monitoring parameters to predict the fetal health status.</p>", unsafe_allow_html=True)
+st.markdown("---")
+
+# Reset Button
+if "reset_triggered" not in st.session_state:
+    st.session_state.reset_triggered = False
+
+if st.button("🔄 Reset All Fields"):
+    st.session_state.reset_triggered = True
+    st.rerun()
+
+if st.session_state.reset_triggered:
+    for feature in feature_info:
+        st.session_state[feature] = 0.0
+    st.session_state.reset_triggered = False
+
+# Random Input
+if st.button("🎲 Try Example Input"):
+    for key in feature_info:
+        st.session_state[key] = round(random.uniform(0.0, 10.0), 3)
+    st.rerun()
+
+# Input form
+st.markdown("### 📝 Input Features")
+user_inputs = {}
+for feature, label in feature_info.items():
+    user_inputs[feature] = st.number_input(f"{label}", step=0.01, format="%.3f", key=feature)
+
+# Prediction
+if st.button("🚀 Predict Fetal Health"):
+    input_df = pd.DataFrame([user_inputs])
+    prediction = loaded_model.predict(input_df)[0]
+    probability = loaded_model.predict_proba(input_df)[0]
+    classes = {1: "Normal", 2: "Suspect", 3: "Pathological"}
+    color_map = {1: "#4CAF50", 2: "#FFA500", 3: "#FF4444"}
+
+    result = classes.get(prediction, "Unknown")
+    color = color_map.get(prediction, "#444")
+
+    st.markdown(f"<h2 style='text-align: center; color: {color};'>🧬 Predicted Status: {result}</h2>", unsafe_allow_html=True)
+    st.info(f"🔍 Confidence: {round(max(probability) * 100, 2)}%")
+
+    # Probability bar
+    st.markdown("#### 🔬 Prediction Probabilities")
+    labels = ["Normal", "Suspect", "Pathological"]
+    plt.bar(labels, probability, color=["#4CAF50", "#FFA500", "#FF4444"])
+    st.pyplot(plt)
+
+    # Feature importance (optional)
+    if hasattr(loaded_model, "feature_importances_"):
+        st.markdown("#### 📈 Feature Importance")
+        importance = loaded_model.feature_importances_
+        sorted_idx = importance.argsort()
+        plt.figure()
+        plt.barh([list(feature_info.values())[i] for i in sorted_idx], importance[sorted_idx], color="#00BFFF")
+        st.pyplot(plt)
+
+# Bulk CSV Prediction
+st.markdown("---")
+st.markdown("### 📂 Upload CSV for Bulk Prediction")
+uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"])
+if uploaded_file is not None:
+    df = pd.read_csv(uploaded_file)
+    predictions = loaded_model.predict(df)
+    df['Predicted Health'] = [classes.get(p, "Unknown") for p in predictions]
+    st.dataframe(df)
+    st.download_button("Download Results", df.to_csv(index=False), file_name="fetal_health_predictions.csv")
+
+# Footer
+st.markdown("<hr>", unsafe_allow_html=True)
+st.markdown("<div style='text-align: center; color: gray;'>Made with ❤️ using Streamlit</div>", unsafe_allow_html=True)
+import streamlit as st
+import pickle
+import pandas as pd
+import matplotlib.pyplot as plt
+import random
+
+# Page config
+st.set_page_config(page_title="Fetal Health Classifier", layout="centered")
+
+# Load the model
+model_file = 'fetal_model.pickle'
+loaded_model = pickle.load(open(model_file, 'rb'))
+
+# Feature list based on the fetal_health.csv
+feature_info = {
+    'baseline value': 'Baseline Heart Rate',
+    'accelerations': 'Accelerations',
+    'fetal_movement': 'Fetal Movement',
+    'uterine_contractions': 'Uterine Contractions',
+    'light_decelerations': 'Light Decelerations',
+    'severe_decelerations': 'Severe Decelerations',
+    'prolongued_decelerations': 'Prolonged Decelerations',
+    'abnormal_short_term_variability': 'Abnormal STV',
+    'mean_value_of_short_term_variability': 'Mean STV',
+    'percentage_of_time_with_abnormal_long_term_variability': 'Abnormal LTV (%)',
+    'mean_value_of_long_term_variability': 'Mean LTV',
+    'histogram_width': 'Histogram Width',
+    'histogram_min': 'Histogram Min',
+    'histogram_max': 'Histogram Max',
+    'histogram_number_of_peaks': 'Histogram Peaks',
+    'histogram_number_of_zeroes': 'Histogram Zeroes',
+    'histogram_mode': 'Histogram Mode',
+    'histogram_mean': 'Histogram Mean',
+    'histogram_median': 'Histogram Median',
+    'histogram_variance': 'Histogram Variance',
+    'histogram_tendency': 'Histogram Tendency'
+}
+
+# Sidebar
+with st.sidebar:
+    st.markdown("## 🩺 About")
+    st.write("This app predicts **fetal health status** based on cardiotocography features using a pre-trained ML model.")
+    st.markdown("---")
+    st.markdown("👶 *Fetal Health Classifier*")
+    st.markdown("📁 Model: `fetal_model.pickle`")
+
+# Title
+st.markdown("<h1 style='text-align: center; color: #00BFFF;'>👶 Fetal Health Prediction</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: gray;'>Enter fetal monitoring parameters to predict the fetal health status.</p>", unsafe_allow_html=True)
+st.markdown("---")
+
+# Reset Button
+if "reset_triggered" not in st.session_state:
+    st.session_state.reset_triggered = False
+
+if st.button("🔄 Reset All Fields"):
+    st.session_state.reset_triggered = True
+    st.rerun()
+
+if st.session_state.reset_triggered:
+    for feature in feature_info:
+        st.session_state[feature] = 0.0
+    st.session_state.reset_triggered = False
+
+# Random Input
+if st.button("🎲 Try Example Input"):
+    for key in feature_info:
+        st.session_state[key] = round(random.uniform(0.0, 10.0), 3)
+    st.rerun()
+
+# Input form
+st.markdown("### 📝 Input Features")
+user_inputs = {}
+for feature, label in feature_info.items():
+    user_inputs[feature] = st.number_input(f"{label}", step=0.01, format="%.3f", key=feature)
+
+# Prediction
+if st.button("🚀 Predict Fetal Health"):
+    input_df = pd.DataFrame([user_inputs])
+    prediction = loaded_model.predict(input_df)[0]
+    probability = loaded_model.predict_proba(input_df)[0]
+    classes = {1: "Normal", 2: "Suspect", 3: "Pathological"}
+    color_map = {1: "#4CAF50", 2: "#FFA500", 3: "#FF4444"}
+
+    result = classes.get(prediction, "Unknown")
+    color = color_map.get(prediction, "#444")
+
+    st.markdown(f"<h2 style='text-align: center; color: {color};'>🧬 Predicted Status: {result}</h2>", unsafe_allow_html=True)
+    st.info(f"🔍 Confidence: {round(max(probability) * 100, 2)}%")
+
+    # Probability bar
+    st.markdown("#### 🔬 Prediction Probabilities")
+    labels = ["Normal", "Suspect", "Pathological"]
+    plt.bar(labels, probability, color=["#4CAF50", "#FFA500", "#FF4444"])
+    st.pyplot(plt)
+
+    # Feature importance (optional)
+    if hasattr(loaded_model, "feature_importances_"):
+        st.markdown("#### 📈 Feature Importance")
+        importance = loaded_model.feature_importances_
+        sorted_idx = importance.argsort()
+        plt.figure()
+        plt.barh([list(feature_info.values())[i] for i in sorted_idx], importance[sorted_idx], color="#00BFFF")
+        st.pyplot(plt)
+
+# Bulk CSV Prediction
+st.markdown("---")
+st.markdown("### 📂 Upload CSV for Bulk Prediction")
+uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"])
+if uploaded_file is not None:
+    df = pd.read_csv(uploaded_file)
+    predictions = loaded_model.predict(df)
+    df['Predicted Health'] = [classes.get(p, "Unknown") for p in predictions]
+    st.dataframe(df)
+    st.download_button("Download Results", df.to_csv(index=False), file_name="fetal_health_predictions.csv")
+
+# Footer
+st.markdown("<hr>", unsafe_allow_html=True)
+st.markdown("<div style='text-align: center; color: gray;'>Made with ❤️ using Streamlit</div>", unsafe_allow_html=True)
